@@ -1,0 +1,40 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "LmApp",
+  "version": "0.1.0",
+  "identifier": "com.bolti.lmapp",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420",
+    "beforeDevCommand": "npm.cmd run dev",
+    "beforeBuildCommand": "npm.cmd run build"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "LmApp",
+        "width": 1480,
+        "height": 940,
+        "minWidth": 1180,
+        "minHeight": 760,
+        "resizable": true,
+        "decorations": false,
+        "shadow": true,
+        "transparent": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "publisher": "rxzsu",
+    "category": "DeveloperTool",
+    "shortDescription": "Desktop workspace for local AI models, chats, and runtime control.",
+    "longDescription": "LmApp is a Windows desktop application for managing local AI runtimes, model libraries, onboarding flows, persistent chats, and release-ready desktop controls.",
+    "copyright": "Copyright (c) rxzsu",
+    "icon": ["icons/icon.ico"]
+  }
+}
