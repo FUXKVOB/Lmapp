@@ -310,6 +310,46 @@ async fn download_llama_cpp(app: tauri::AppHandle) -> Result<String, String> {
 }
 
 #[tauri::command]
+async fn search_hf_models(
+    state: State<'_, SharedState>,
+    query: String,
+    limit: Option<usize>,
+) -> Result<Vec<Value>, String> {
+    let limit = limit.unwrap_or(20);
+    let url = format!(
+        "https://huggingface.co/api/models?library=gguf&search={}&limit={}&full=true",
+        urlencoding::encode(&query),
+        limit
+    );
+
+    let response = state
+        .client
+        .get(&url)
+        .send()
+        .await
+        .map_err(|e| format!("Failed to search models: {}", e))?;
+
+    let mut models: Vec<Value> = response
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse response: {}", e))?;
+
+    // Для каждой модели получаем список файлов
+    for model in models.iter_mut() {
+        if let Some(model_id) = model.get("id").and_then(|v| v.as_str()) {
+            let files_url = format!("https://huggingface.co/api/models/{}/tree/main", model_id);
+            if let Ok(files_response) = state.client.get(&files_url).send().await {
+                if let Ok(files) = files_response.json::<Vec<Value>>().await {
+                    model["siblings"] = json!(files);
+                }
+            }
+        }
+    }
+
+    Ok(models)
+}
+
+#[tauri::command]
 async fn check_app_updates(app: tauri::AppHandle) -> Result<UpdateInfo, String> {
     let state = app.state::<SharedState>();
     let version = app.package_info().version.to_string();
@@ -569,7 +609,8 @@ fn main() {
             chat_with_model,
             download_llama_cpp,
             complete_onboarding,
-            check_app_updates
+            check_app_updates,
+            search_hf_models
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

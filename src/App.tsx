@@ -8,7 +8,6 @@ import { CatalogModal } from "./components/CatalogModal";
 import { ProfileModal } from "./components/ProfileModal";
 import { SettingsModal } from "./components/SettingsModal";
 import { DEFAULT_STATE } from "./constants";
-import { MODEL_CATALOG } from "./modelCatalog";
 import type { AppState, CatalogModel, RuntimeSettings, SettingsSection, UpdateInfo, View } from "./types";
 import { bytesLabel, compactRuntimeName, formatTime, speedLabel, validateRuntime } from "./utils/format";
 
@@ -120,19 +119,6 @@ export function App() {
         model.filename.toLowerCase().includes(query)
     );
   }, [modelFilter, state.models]);
-
-  const catalogModels = useMemo(() => {
-    const query = catalogFilter.trim().toLowerCase();
-    return MODEL_CATALOG.filter((model) => {
-      if (!query) {
-        return true;
-      }
-      return [model.title, model.repoId, model.summary, model.tags.join(" ")]
-        .join(" ")
-        .toLowerCase()
-        .includes(query);
-    });
-  }, [catalogFilter]);
 
   const activeDownloadEntries = useMemo(
     () => state.downloads.filter((item) => item.status === "starting" || item.status === "downloading"),
@@ -946,7 +932,7 @@ export function App() {
         <CatalogModal
           busy={busy}
           catalogFilter={catalogFilter}
-          catalogModels={catalogModels}
+          catalogModels={[]}
           models={state.models}
           onAddCatalogModel={addCatalogModel}
           onClose={() => setCatalogOpen(false)}
