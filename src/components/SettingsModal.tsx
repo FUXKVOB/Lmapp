@@ -253,7 +253,7 @@ export function SettingsModal({
                 <div className="info-list">
                   <div>
                     <span>Version</span>
-                    <strong>{updateInfo?.current_version ?? "0.1.0"}</strong>
+                    <strong>{updateInfo?.current_version ?? "0.2.0"}</strong>
                   </div>
                   <div>
                     <span>Repository</span>
@@ -303,6 +303,23 @@ export function SettingsModal({
                   <button disabled={busy || checkingUpdates} onClick={onCheckUpdates} type="button">
                     {checkingUpdates ? "Checking..." : "Check for Updates"}
                   </button>
+                </div>
+              </div>
+              <div className="settings-card">
+                <h4>Release Notes 0.2.0</h4>
+                <div className="release-notes">
+                  <div>
+                    <strong>Desktop workspace upgrade</strong>
+                    <span>Added a more polished frameless shell, stronger glassmorphism, refined panels, and a cleaner desktop-first visual hierarchy.</span>
+                  </div>
+                  <div>
+                    <strong>Operational logs</strong>
+                    <span>New Logs tab shows runtime events, downloads, chat request flow, and update checks in a dedicated diagnostics view.</span>
+                  </div>
+                  <div>
+                    <strong>Deeper desktop controls</strong>
+                    <span>Menu and tray navigation now reach chat, models, settings, and logs, with better startup, runtime, and workflow visibility.</span>
+                  </div>
                 </div>
               </div>
               <div className="settings-card">

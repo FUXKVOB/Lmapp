@@ -1,4 +1,6 @@
-use crate::types::{default_presets, AppStateDto, ChatSession, ModelRecord, PersistedState};
+use crate::types::{
+    default_presets, now_ts, AppStateDto, ChatSession, LogEntry, ModelRecord, PersistedState,
+};
 use anyhow::Result;
 use reqwest::Client;
 use std::{
@@ -18,6 +20,7 @@ pub struct SharedState {
     pub file_path: PathBuf,
     pub app_state: Mutex<PersistedState>,
     pub downloads: Mutex<HashMap<String, crate::types::DownloadStatus>>,
+    pub logs: Mutex<Vec<LogEntry>>,
     pub server: ServerState,
     pub client: Client,
 }
@@ -44,6 +47,7 @@ impl SharedState {
             file_path,
             app_state: Mutex::new(app_state),
             downloads: Mutex::new(HashMap::new()),
+            logs: Mutex::new(Vec::new()),
             server: ServerState {
                 process: Mutex::new(None),
                 status: Mutex::new("stopped".into()),
@@ -68,6 +72,7 @@ pub fn to_public_state(shared: &SharedState) -> AppStateDto {
         .values()
         .cloned()
         .collect::<Vec<_>>();
+    let logs = shared.logs.lock().unwrap().clone();
     AppStateDto {
         models: state.models,
         active_model_id: state.active_model_id,
@@ -76,6 +81,7 @@ pub fn to_public_state(shared: &SharedState) -> AppStateDto {
         onboarding_completed: state.onboarding_completed,
         runtime: state.runtime,
         downloads,
+        logs,
         presets: default_presets(),
         is_server_running: shared.server.process.lock().unwrap().is_some(),
         server_status: shared.server.status.lock().unwrap().clone(),
@@ -105,4 +111,23 @@ pub fn active_chat_mut(state: &mut PersistedState) -> Result<&mut ChatSession, S
 
 pub fn slug_title(source: &str, filename: &str) -> String {
     format!("{} / {}", source, filename)
+}
+
+pub fn push_log(shared: &SharedState, level: &str, scope: &str, message: impl Into<String>) {
+    let mut logs = shared.logs.lock().unwrap();
+    let timestamp = now_ts();
+    let next_index = logs.len();
+    logs.insert(
+        0,
+        LogEntry {
+            id: format!("log-{timestamp}-{next_index}"),
+            timestamp,
+            level: level.to_string(),
+            scope: scope.to_string(),
+            message: message.into(),
+        },
+    );
+    if logs.len() > 500 {
+        logs.truncate(500);
+    }
 }

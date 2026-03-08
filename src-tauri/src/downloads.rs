@@ -1,4 +1,4 @@
-use crate::state::SharedState;
+use crate::state::{push_log, SharedState};
 use crate::types::DownloadStatus;
 use futures_util::StreamExt;
 use std::{fs, path::Path};
@@ -34,6 +34,12 @@ pub async fn download_model_inner(shared: &SharedState, model_id: String) -> Res
             error: None,
         },
     );
+    push_log(
+        shared,
+        "info",
+        "download",
+        format!("Starting download for model: {}", model.title),
+    );
 
     let result = async {
         let url = format!(
@@ -58,6 +64,15 @@ pub async fn download_model_inner(shared: &SharedState, model_id: String) -> Res
             .map_err(|error| error.to_string())?;
 
         let total_bytes = response.content_length();
+        push_log(
+            shared,
+            "info",
+            "download",
+            match total_bytes {
+                Some(total) => format!("Download stream opened. Expected size: {total} bytes."),
+                None => "Download stream opened. Size is unknown.".to_string(),
+            },
+        );
         if let Some(parent) = Path::new(&model.local_path).parent() {
             fs::create_dir_all(parent).map_err(|error| error.to_string())?;
         }
@@ -105,11 +120,23 @@ pub async fn download_model_inner(shared: &SharedState, model_id: String) -> Res
         }
 
         shared.downloads.lock().unwrap().remove(&model_id);
+        push_log(
+            shared,
+            "success",
+            "download",
+            format!("Download completed successfully: {}", model.title),
+        );
         shared.save().map_err(|error| error.to_string())
     }
     .await;
 
     if let Err(error) = &result {
+        push_log(
+            shared,
+            "error",
+            "download",
+            format!("Download failed for {}: {error}", model.title),
+        );
         set_download_status(
             shared,
             &model_id,

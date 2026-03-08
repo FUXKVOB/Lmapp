@@ -1,5 +1,5 @@
 export type RuntimeKind = "llama_cpp" | "vllm";
-export type View = "chat" | "models";
+export type View = "chat" | "models" | "logs";
 export type SettingsSection = "general" | "runtime" | "downloads" | "about";
 
 export type UpdateInfo = {
@@ -42,6 +42,14 @@ export type DownloadStatus = {
   error?: string | null;
 };
 
+export type LogEntry = {
+  id: string;
+  timestamp: number;
+  level: "info" | "success" | "warning" | "error";
+  scope: "app" | "runtime" | "download" | "chat" | "update";
+  message: string;
+};
+
 export type ModelPreset = {
   id: string;
   title: string;
@@ -77,6 +85,7 @@ export type AppState = {
   onboarding_completed: boolean;
   runtime: RuntimeSettings;
   downloads: DownloadStatus[];
+  logs: LogEntry[];
   presets: ModelPreset[];
   is_server_running: boolean;
   server_status: string;
