@@ -515,7 +515,7 @@ export function App() {
             </div>
             <div className="titlebar-brand-copy">
               <strong>LmApp</strong>
-              <span>Local Studio v0.1.0</span>
+              <span>Local Studio v0.1.1</span>
             </div>
           </div>
           <div className="titlebar-center">

@@ -11,7 +11,7 @@ It combines:
 
 ## Version
 
-Current release: `0.1.0`
+Current release: `0.1.1`
 
 Repository: [FUXKVOB/Lmapp](https://github.com/FUXKVOB/Lmapp)
 
@@ -74,6 +74,14 @@ Tauri release artifacts are generated in:
 
 - `src-tauri/target/release`
 - `src-tauri/target/release/bundle`
+
+## Release Notes 0.1.1
+
+- Dynamic Hugging Face model search via API
+- Removed hardcoded model catalog
+- Real-time model discovery with download stats and file sizes
+- Automatic GGUF file detection and Q4_K_M filtering
+- Search any model: llama, qwen, gemma, phi, mistral, deepseek, etc.
 
 ## Release Notes 0.1.0
 
