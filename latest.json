@@ -1,11 +1,11 @@
 {
-  "version": "0.1.1",
-  "notes": "Dynamic Hugging Face model search and auto-updater",
-  "pub_date": "2026-03-07",
+  "version": "0.2.0",
+  "notes": "0.2.0 Logs Tab, UI ",
+  "pub_date": "2026-03-09",
   "platforms": {
     "windows-x86_64": {
       "signature": "",
-      "url": "https://github.com/FUXKVOB/Lmapp/releases/download/v0.1.1/LmApp_0.1.1_x64-setup.exe"
+      "url": "https://github.com/FUXKVOB/Lmapp/releases/download/v0.2.0/LmApp_0.2._x64-setup.exe"
     }
   }
 }
