@@ -1,0 +1,10 @@
+{
+  "version": "0.1.1",
+  "notes": "Dynamic Hugging Face model search and auto-updater"
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "",
+      "url": "https://github.com/FUXKVOB/Lmapp/releases/download/v0.1.1/LmApp_0.1.1_x64-setup.exe"
+    }
+  }
+}
