@@ -25,14 +25,6 @@
     ],
     "security": {
       "csp": null
-    },
-    "updater": {
-      "active": true,
-      "endpoints": [
-        "https://github.com/FUXKVOB/Lmapp/releases/latest/download/latest.json"
-      ],
-      "dialog": false,
-      "pubkey": ""
     }
   },
   "bundle": {
@@ -44,5 +36,15 @@
     "longDescription": "LmApp is a Windows desktop application for managing local AI runtimes, model libraries, onboarding flows, persistent chats, and release-ready desktop controls.",
     "copyright": "Copyright (c) rxzsu",
     "icon": ["icons/icon.ico"]
+  },
+  "plugins": {
+    "updater": {
+      "active": true,
+      "endpoints": [
+        "https://github.com/FUXKVOB/Lmapp/releases/latest/download/latest.json"
+      ],
+      "dialog": false,
+      "pubkey": ""
+    }
   }
 }

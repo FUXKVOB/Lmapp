@@ -9,3 +9,5 @@ models/
 downloads/
 *.log
 *.tsbuildinfo
+*.exe
+*.msi
