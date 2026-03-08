@@ -400,6 +400,7 @@ fn main() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(move |app| {
             let app_dir = app_dir(app.handle())?;
             let state = SharedState::load(&app_dir).map_err(|error| anyhow!("{error}"))?;

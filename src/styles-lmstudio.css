@@ -1045,6 +1045,44 @@ select {
   pointer-events: none;
 }
 
+.update-banner {
+  position: fixed;
+  top: 58px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2300;
+  pointer-events: auto;
+  animation: toast-in 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.update-banner-content {
+  min-width: 500px;
+  max-width: 700px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 20px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(91, 124, 255, 0.15), rgba(74, 99, 217, 0.15));
+  border: 1px solid rgba(91, 124, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(12px);
+}
+
+.update-banner-content strong {
+  display: block;
+  font-size: 14px;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.update-banner-content p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
 .toast {
   min-width: 280px;
   max-width: 420px;

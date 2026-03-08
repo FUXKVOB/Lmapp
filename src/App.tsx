@@ -134,6 +134,8 @@ export function App() {
 
   useEffect(() => {
     refreshState().catch((error) => setStatus(String(error)));
+    // Проверка обновлений при запуске
+    checkUpdates().catch(() => undefined);
   }, []);
 
   useEffect(() => {
@@ -974,6 +976,53 @@ export function App() {
           }}
           runtime={runtime}
         />
+      ) : null}
+
+      {updateInfo?.update_available && appReady && state.onboarding_completed ? (
+        <div className="update-banner">
+          <div className="update-banner-content">
+            <div>
+              <strong>Update Available: v{updateInfo.latest_version}</strong>
+              <p>New version is ready to download and install</p>
+            </div>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button
+                onClick={async () => {
+                  try {
+                    const { check } = await import("@tauri-apps/plugin-updater");
+                    const update = await check();
+                    if (update?.available) {
+                      pushToast("Downloading update...", "info");
+                      await update.downloadAndInstall();
+                      pushToast("Update installed! Restart the app to apply.", "success");
+                    }
+                  } catch (error) {
+                    pushToast(`Update failed: ${error}`, "error");
+                  }
+                }}
+                type="button"
+              >
+                Download & Install
+              </button>
+              <button
+                className="subtle-button"
+                onClick={() => {
+                  window.open(updateInfo.release_url, "_blank");
+                }}
+                type="button"
+              >
+                View Release
+              </button>
+              <button
+                className="subtle-button"
+                onClick={() => setUpdateInfo(null)}
+                type="button"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
 
       <div className="toast-stack" aria-live="polite" aria-atomic="true">
