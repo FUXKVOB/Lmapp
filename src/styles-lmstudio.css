@@ -146,6 +146,8 @@ body {
   gap: 6px;
   min-width: 180px;
   justify-content: flex-end;
+  position: relative;
+  z-index: 10;
 }
 
 .window-control {
@@ -158,6 +160,10 @@ body {
   color: var(--text-secondary);
   font-size: 12px;
   font-weight: 700;
+  cursor: pointer;
+  pointer-events: auto;
+  position: relative;
+  z-index: 10;
 }
 
 .window-control:hover:not(:disabled) {

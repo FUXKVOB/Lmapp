@@ -455,15 +455,18 @@ export function App() {
   }
 
   async function minimizeWindow() {
+    console.log("Minimize clicked");
     await appWindow.minimize();
   }
 
   async function toggleWindowMaximize() {
+    console.log("Maximize clicked");
     await appWindow.toggleMaximize();
     setWindowMaximized(await appWindow.isMaximized());
   }
 
   async function closeWindow() {
+    console.log("Close clicked");
     await appWindow.hide();
   }
 
@@ -492,20 +495,20 @@ export function App() {
     }
   }
 
-  async function handleTitlebarMouseDown(event: MouseEvent<HTMLDivElement>) {
+  function handleTitlebarMouseDown(event: MouseEvent<HTMLDivElement>) {
     const target = event.target as HTMLElement;
     if (event.button !== 0 || target.closest("button")) {
       return;
     }
-    await appWindow.startDragging();
+    void appWindow.startDragging();
   }
 
-  async function handleTitlebarDoubleClick(event: MouseEvent<HTMLDivElement>) {
+  function handleTitlebarDoubleClick(event: MouseEvent<HTMLDivElement>) {
     const target = event.target as HTMLElement;
     if (target.closest("button")) {
       return;
     }
-    await toggleWindowMaximize();
+    void toggleWindowMaximize();
   }
 
   const showStartupOverlay =
@@ -519,17 +522,17 @@ export function App() {
   return (
     <>
       <div className="window-shell">
-        <div className="titlebar" data-tauri-drag-region onDoubleClick={handleTitlebarDoubleClick} onMouseDown={handleTitlebarMouseDown}>
-          <div className="titlebar-brand" data-tauri-drag-region>
+        <div className="titlebar" onDoubleClick={handleTitlebarDoubleClick} onMouseDown={handleTitlebarMouseDown}>
+          <div className="titlebar-brand">
             <div className={`titlebar-brand-mark ${state.is_server_running ? "online" : ""}`}>
               <img src={logoUrl} alt="LmApp" />
             </div>
-            <div className="titlebar-brand-copy" data-tauri-drag-region>
+            <div className="titlebar-brand-copy">
               <strong>LmApp</strong>
               <span>Local Studio v0.1.0</span>
             </div>
           </div>
-          <div className="titlebar-center" data-tauri-drag-region>
+          <div className="titlebar-center">
             <span className={`runtime-chip compact ${state.is_server_running ? "online" : ""}`}>{state.server_status}</span>
           </div>
           <div className="titlebar-actions">
