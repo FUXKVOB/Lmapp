@@ -1,6 +1,7 @@
 {
   "version": "0.1.1",
-  "notes": "Dynamic Hugging Face model search and auto-updater"
+  "notes": "Dynamic Hugging Face model search and auto-updater",
+  "pub_date": "2026-03-07",
   "platforms": {
     "windows-x86_64": {
       "signature": "",
