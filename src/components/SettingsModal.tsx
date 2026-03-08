@@ -306,6 +306,23 @@ export function SettingsModal({
                 </div>
               </div>
               <div className="settings-card">
+                <h4>Release Notes 0.1.1</h4>
+                <div className="release-notes">
+                  <div>
+                    <strong>Dynamic Model Search</strong>
+                    <span>Real-time Hugging Face API integration. Search any GGUF model by keywords: llama, qwen, gemma, phi, mistral, deepseek.</span>
+                  </div>
+                  <div>
+                    <strong>Smart Filtering</strong>
+                    <span>Automatic Q4_K_M quantization detection, file size display, download statistics, and model tags from Hugging Face.</span>
+                  </div>
+                  <div>
+                    <strong>No Hardcoded Catalog</strong>
+                    <span>Removed static model list. All models loaded dynamically from HF API with real-time data and file information.</span>
+                  </div>
+                </div>
+              </div>
+              <div className="settings-card">
                 <h4>Release Notes 0.1.0</h4>
                 <div className="release-notes">
                   <div>
