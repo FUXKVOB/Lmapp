@@ -25,6 +25,7 @@ export const DEFAULT_STATE: AppState = {
     }
   },
   downloads: [],
+  logs: [],
   presets: [],
   is_server_running: false,
   server_status: "stopped"

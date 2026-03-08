@@ -18,7 +18,9 @@ use crate::runtime::{
     app_dir, check_for_updates, download_llama_cpp_inner, spawn_llama, spawn_vllm,
     wait_until_server_ready,
 };
-use crate::state::{active_chat_mut, active_model, slug_title, to_public_state, SharedState};
+use crate::state::{
+    active_chat_mut, active_model, push_log, slug_title, to_public_state, SharedState,
+};
 use crate::types::{
     default_presets, now_ts, AppStateDto, ChatMessage, RuntimeKind, RuntimeSettings, UpdateInfo,
 };
@@ -39,9 +41,16 @@ fn add_hf_model(
     let mut app_state = state.app_state.lock().unwrap();
     let id = format!("{}:{}", repo_id, filename);
     if app_state.models.iter().any(|model| model.id == id) {
+        push_log(
+            &state,
+            "warning",
+            "app",
+            format!("Model already exists in library: {id}"),
+        );
         return Ok(());
     }
     let safe_name = filename.replace(['/', '\\', ':'], "_");
+    let log_label = format!("{repo_id} / {filename}");
     let local_path = Path::new(&app_state.runtime.download_dir)
         .join(safe_name)
         .to_string_lossy()
@@ -59,6 +68,7 @@ fn add_hf_model(
         app_state.active_model_id = Some(id);
     }
     drop(app_state);
+    push_log(&state, "success", "app", format!("Added model to library: {log_label}"));
     state.save().map_err(|error| error.to_string())
 }
 
@@ -99,6 +109,12 @@ fn update_runtime_settings(
     let mut app_state = state.app_state.lock().unwrap();
     app_state.runtime = runtime;
     drop(app_state);
+    push_log(
+        &state,
+        "success",
+        "runtime",
+        "Runtime settings were updated.",
+    );
     state.save().map_err(|error| error.to_string())
 }
 
@@ -117,6 +133,7 @@ fn create_chat(state: State<'_, SharedState>, title: Option<String>) -> Result<(
     app_state.active_chat_id = Some(unique_id);
     app_state.chats.insert(0, chat);
     drop(app_state);
+    push_log(&state, "info", "chat", "Created a new chat session.");
     state.save().map_err(|error| error.to_string())
 }
 
@@ -127,6 +144,7 @@ fn set_active_chat(state: State<'_, SharedState>, chat_id: String) -> Result<(),
         app_state.active_chat_id = Some(chat_id);
     }
     drop(app_state);
+    push_log(&state, "info", "chat", "Switched the active chat.");
     state.save().map_err(|error| error.to_string())
 }
 
@@ -143,6 +161,12 @@ fn delete_chat(state: State<'_, SharedState>, chat_id: String) -> Result<(), Str
         app_state.active_chat_id = app_state.chats.first().map(|chat| chat.id.clone());
     }
     drop(app_state);
+    push_log(
+        &state,
+        "warning",
+        "chat",
+        format!("Removed chat session: {chat_id}"),
+    );
     state.save().map_err(|error| error.to_string())
 }
 
@@ -151,6 +175,7 @@ fn complete_onboarding(state: State<'_, SharedState>) -> Result<(), String> {
     let mut app_state = state.app_state.lock().unwrap();
     app_state.onboarding_completed = true;
     drop(app_state);
+    push_log(&state, "success", "app", "Onboarding completed.");
     state.save().map_err(|error| error.to_string())
 }
 
@@ -168,6 +193,16 @@ async fn start_download_model(app: tauri::AppHandle, model_id: String) -> Result
         }
     }
 
+    {
+        let state = app.state::<SharedState>();
+        push_log(
+            &state,
+            "info",
+            "download",
+            format!("Queued model download: {model_id}"),
+        );
+    }
+
     tauri::async_runtime::spawn(async move {
         let state = app.state::<SharedState>();
         let _ = download_model_inner(&state, model_id).await;
@@ -182,6 +217,12 @@ async fn start_model_server(state: State<'_, SharedState>) -> Result<(), String>
 
 async fn start_model_server_inner(state: &SharedState) -> Result<(), String> {
     if state.server.process.lock().unwrap().is_some() {
+        push_log(
+            state,
+            "warning",
+            "runtime",
+            "Runtime start requested while server is already running.",
+        );
         return Ok(());
     }
 
@@ -190,19 +231,46 @@ async fn start_model_server_inner(state: &SharedState) -> Result<(), String> {
         RuntimeKind::LlamaCpp => {
             let model = active_model(&app_state)?;
             if !model.downloaded {
+                push_log(
+                    state,
+                    "error",
+                    "runtime",
+                    "Runtime start blocked because the selected model is not downloaded.",
+                );
                 return Err("Selected model is not downloaded".to_string());
             }
+            push_log(
+                state,
+                "info",
+                "runtime",
+                format!("Starting llama.cpp with model: {}", model.title),
+            );
             spawn_llama(&app_state.runtime, &model)?
         }
-        RuntimeKind::Vllm => spawn_vllm(&app_state.runtime)?,
+        RuntimeKind::Vllm => {
+            push_log(state, "info", "runtime", "Starting vLLM runtime.");
+            spawn_vllm(&app_state.runtime)?
+        }
     };
 
     *state.server.process.lock().unwrap() = Some(child);
     *state.server.status.lock().unwrap() = "loading".into();
+    push_log(
+        state,
+        "info",
+        "runtime",
+        "Runtime process launched. Waiting for API readiness.",
+    );
 
     match wait_until_server_ready(&state.client, &app_state.runtime.server_base_url).await {
         Ok(_) => {
             *state.server.status.lock().unwrap() = "ready".into();
+            push_log(
+                state,
+                "success",
+                "runtime",
+                "Runtime is ready to accept requests.",
+            );
             Ok(())
         }
         Err(error) => {
@@ -210,6 +278,12 @@ async fn start_model_server_inner(state: &SharedState) -> Result<(), String> {
                 let _ = child.kill();
             }
             *state.server.status.lock().unwrap() = format!("error: {error}");
+            push_log(
+                state,
+                "error",
+                "runtime",
+                format!("Runtime failed to start: {error}"),
+            );
             Err(error)
         }
     }
@@ -225,11 +299,13 @@ fn stop_model_server_inner(state: &SharedState) -> Result<(), String> {
         child.kill().map_err(|error| error.to_string())?;
     }
     *state.server.status.lock().unwrap() = "stopped".into();
+    push_log(state, "info", "runtime", "Runtime stopped.");
     Ok(())
 }
 
 #[tauri::command]
 async fn chat_with_model(state: State<'_, SharedState>, prompt: String) -> Result<String, String> {
+    let prompt_preview = prompt.trim().chars().take(60).collect::<String>();
     let runtime = {
         let mut app_state = state.app_state.lock().unwrap();
         let chat = active_chat_mut(&mut app_state)?;
@@ -243,6 +319,12 @@ async fn chat_with_model(state: State<'_, SharedState>, prompt: String) -> Resul
         }
         app_state.runtime.clone()
     };
+    push_log(
+        &state,
+        "info",
+        "chat",
+        format!("Accepted user prompt: {prompt_preview}"),
+    );
     state.save().map_err(|error| error.to_string())?;
 
     let messages = {
@@ -269,7 +351,22 @@ async fn chat_with_model(state: State<'_, SharedState>, prompt: String) -> Resul
         all_messages.extend(chat_messages);
         all_messages
     };
+    push_log(
+        &state,
+        "info",
+        "chat",
+        format!(
+            "Prepared {} messages for the model request.",
+            messages.len()
+        ),
+    );
 
+    push_log(
+        &state,
+        "info",
+        "runtime",
+        "Sending chat completion request to the runtime API.",
+    );
     let response = state
         .client
         .post(format!("{}/v1/chat/completions", runtime.server_base_url))
@@ -280,15 +377,47 @@ async fn chat_with_model(state: State<'_, SharedState>, prompt: String) -> Resul
         }))
         .send()
         .await
-        .map_err(|error| error.to_string())?
+        .map_err(|error| {
+            push_log(
+                &state,
+                "error",
+                "runtime",
+                format!("Failed to send model request: {error}"),
+            );
+            error.to_string()
+        })?
         .error_for_status()
-        .map_err(|error| error.to_string())?;
+        .map_err(|error| {
+            push_log(
+                &state,
+                "error",
+                "runtime",
+                format!("Runtime returned an HTTP error: {error}"),
+            );
+            error.to_string()
+        })?;
 
-    let body: Value = response.json().await.map_err(|error| error.to_string())?;
+    let body: Value = response.json().await.map_err(|error| {
+        push_log(
+            &state,
+            "error",
+            "runtime",
+            format!("Failed to parse model response: {error}"),
+        );
+        error.to_string()
+    })?;
     let answer = body["choices"][0]["message"]["content"]
         .as_str()
         .map(str::to_string)
-        .ok_or_else(|| "Malformed model response".to_string())?;
+        .ok_or_else(|| {
+            push_log(
+                &state,
+                "error",
+                "runtime",
+                "Runtime returned a malformed model response.",
+            );
+            "Malformed model response".to_string()
+        })?;
 
     let mut app_state = state.app_state.lock().unwrap();
     let chat = active_chat_mut(&mut app_state)?;
@@ -298,6 +427,12 @@ async fn chat_with_model(state: State<'_, SharedState>, prompt: String) -> Resul
     });
     chat.updated_at = now_ts();
     drop(app_state);
+    push_log(
+        &state,
+        "success",
+        "chat",
+        "Assistant response received and stored in chat history.",
+    );
     state.save().map_err(|error| error.to_string())?;
     Ok(answer)
 }
@@ -353,7 +488,49 @@ async fn search_hf_models(
 async fn check_app_updates(app: tauri::AppHandle) -> Result<UpdateInfo, String> {
     let state = app.state::<SharedState>();
     let version = app.package_info().version.to_string();
-    check_for_updates(&state.client, &version).await
+    push_log(
+        &state,
+        "info",
+        "update",
+        format!("Checking for updates from version {version}."),
+    );
+    let result = check_for_updates(&state.client, &version).await;
+    match &result {
+        Ok(info) if info.update_available => {
+            push_log(
+                &state,
+                "info",
+                "update",
+                format!(
+                    "Update available: current {}, latest {}.",
+                    info.current_version,
+                    info.latest_version
+                        .clone()
+                        .unwrap_or_else(|| "unknown".into())
+                ),
+            );
+        }
+        Ok(info) => {
+            push_log(
+                &state,
+                "success",
+                "update",
+                format!(
+                    "Application is up to date on version {}.",
+                    info.current_version
+                ),
+            );
+        }
+        Err(error) => {
+            push_log(
+                &state,
+                "error",
+                "update",
+                format!("Update check failed: {error}"),
+            );
+        }
+    }
+    result
 }
 
 fn main() {
@@ -363,6 +540,7 @@ fn main() {
             .build(app)?;
         let chat = MenuItemBuilder::with_id("open_chat", "Chat").build(app)?;
         let models = MenuItemBuilder::with_id("open_models", "Models").build(app)?;
+        let logs = MenuItemBuilder::with_id("open_logs", "Logs").build(app)?;
         let current_chat =
             MenuItemBuilder::with_id("open_current_chat", "Open Current Chat").build(app)?;
         let current_model =
@@ -378,6 +556,7 @@ fn main() {
             .item(&new_chat)
             .item(&chat)
             .item(&models)
+            .item(&logs)
             .item(&current_chat)
             .item(&current_model)
             .item(&settings)
@@ -413,6 +592,7 @@ fn main() {
                 .separator()
                 .text("tray_chat", "Open Chat")
                 .text("tray_models", "Open Models")
+                .text("tray_logs", "Open Logs")
                 .text("tray_current_chat", "Open Current Chat")
                 .text("tray_current_model", "Open Current Model")
                 .text("tray_settings", "Open Settings")
@@ -459,6 +639,14 @@ fn main() {
                             let _ = window.unminimize();
                             let _ = window.set_focus();
                             let _ = app.emit("lmapp://navigate", "models");
+                        }
+                    }
+                    "tray_logs" => {
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.unminimize();
+                            let _ = window.set_focus();
+                            let _ = app.emit("lmapp://navigate", "logs");
                         }
                     }
                     "tray_settings" => {
@@ -555,6 +743,9 @@ fn main() {
             }
             "open_models" => {
                 let _ = app.emit("lmapp://navigate", "models");
+            }
+            "open_logs" => {
+                let _ = app.emit("lmapp://navigate", "logs");
             }
             "open_current_chat" => {
                 let state = app.state::<SharedState>();

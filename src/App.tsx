@@ -44,6 +44,15 @@ function SettingsGlyph() {
   );
 }
 
+function LogsGlyph() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M6 5.5h12a1.5 1.5 0 0 1 1.5 1.5v10A1.5 1.5 0 0 1 18 18.5H6A1.5 1.5 0 0 1 4.5 17V7A1.5 1.5 0 0 1 6 5.5Z" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M8 9h8M8 12h8M8 15h5" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" />
+    </svg>
+  );
+}
+
 export function App() {
   const appWindow = getCurrentWindow();
   const [state, setState] = useState<AppState>(DEFAULT_STATE);
@@ -125,6 +134,17 @@ export function App() {
     [state.downloads]
   );
 
+  const latestLog = useMemo(() => state.logs[0] ?? null, [state.logs]);
+  const recentLogs = useMemo(() => state.logs.slice(0, 120), [state.logs]);
+  const logSummary = useMemo(
+    () => ({
+      errors: state.logs.filter((entry) => entry.level === "error").length,
+      runtime: state.logs.filter((entry) => entry.scope === "runtime").length,
+      downloads: state.logs.filter((entry) => entry.scope === "download").length
+    }),
+    [state.logs]
+  );
+
   async function refreshState() {
     const next = await invoke<AppState>("get_app_state");
     setState(next);
@@ -164,6 +184,10 @@ export function App() {
       }
       if (event.payload === "models") {
         setView("models");
+        setSettingsOpen(false);
+      }
+      if (event.payload === "logs") {
+        setView("logs");
         setSettingsOpen(false);
       }
       if (event.payload === "settings") {
@@ -443,18 +467,15 @@ export function App() {
   }
 
   async function minimizeWindow() {
-    console.log("Minimize clicked");
     await appWindow.minimize();
   }
 
   async function toggleWindowMaximize() {
-    console.log("Maximize clicked");
     await appWindow.toggleMaximize();
     setWindowMaximized(await appWindow.isMaximized());
   }
 
   async function closeWindow() {
-    console.log("Close clicked");
     await appWindow.hide();
   }
 
@@ -517,7 +538,7 @@ export function App() {
             </div>
             <div className="titlebar-brand-copy">
               <strong>LmApp</strong>
-              <span>Local Studio v0.1.1</span>
+              <span>Local Studio v0.2.0</span>
             </div>
           </div>
           <div className="titlebar-center">
@@ -543,6 +564,9 @@ export function App() {
             </button>
             <button className={`rail-icon ${view === "models" ? "active" : ""}`} onClick={() => setView("models")} type="button" title="Models">
               <ModelsGlyph />
+            </button>
+            <button className={`rail-icon ${view === "logs" ? "active" : ""}`} onClick={() => setView("logs")} type="button" title="Logs">
+              <LogsGlyph />
             </button>
             <button className="rail-icon" onClick={() => setSettingsOpen(true)} type="button" title="Settings">
               <SettingsGlyph />
@@ -587,7 +611,7 @@ export function App() {
                   ))}
                 </div>
               </>
-            ) : (
+            ) : view === "models" ? (
               <>
                 <div className="pane-header">
                   <div>
@@ -617,18 +641,52 @@ export function App() {
                   ))}
                 </div>
               </>
+            ) : (
+              <>
+                <div className="pane-header">
+                  <div>
+                    <p className="pane-label">Diagnostics</p>
+                    <h2>Logs</h2>
+                  </div>
+                  <button className="subtle-button" onClick={() => refreshState().catch(() => undefined)} type="button">
+                    Refresh
+                  </button>
+                </div>
+                <div className="hero-card">
+                  <p className="pane-label">Operational feed</p>
+                  <h3>{state.logs.length > 0 ? `${state.logs.length} events recorded` : "No events yet"}</h3>
+                  <p>This tab shows runtime actions, downloads, chat requests, and update checks. It does not expose hidden model reasoning.</p>
+                  <button className="subtle-button" onClick={() => setView("chat")} type="button">
+                    Back to Chat
+                  </button>
+                </div>
+                <div className="pane-list">
+                  <div className="preset-list-item">
+                    <strong>Runtime events</strong>
+                    <span>{logSummary.runtime}</span>
+                  </div>
+                  <div className="preset-list-item">
+                    <strong>Download events</strong>
+                    <span>{logSummary.downloads}</span>
+                  </div>
+                  <div className="preset-list-item">
+                    <strong>Error events</strong>
+                    <span>{logSummary.errors}</span>
+                  </div>
+                </div>
+              </>
             )}
           </aside>
 
           <section className="center-pane">
             <div className="center-header">
               <div>
-                <p className="pane-label">{view === "chat" ? "Conversation" : "Model Hub"}</p>
-                <h3>{view === "chat" ? activeChat?.title ?? "Select a chat" : "Installed Models"}</h3>
+                <p className="pane-label">{view === "chat" ? "Conversation" : view === "models" ? "Model Hub" : "Operational Logs"}</p>
+                <h3>{view === "chat" ? activeChat?.title ?? "Select a chat" : view === "models" ? "Installed Models" : "Runtime and model activity"}</h3>
               </div>
               <div className="header-tools">
                 <span className="runtime-chip">{compactRuntimeName(runtime.runtime_kind)}</span>
-                <span className="runtime-chip">{activeModel?.title ?? "No active model"}</span>
+                <span className="runtime-chip">{view === "logs" ? `${state.logs.length} events` : activeModel?.title ?? "No active model"}</span>
               </div>
             </div>
             {view === "chat" ? (
@@ -729,7 +787,7 @@ export function App() {
                   </div>
                 </div>
               </div>
-            ) : (
+            ) : view === "models" ? (
               <div className="models-layout">
                 <div className="models-toolbar modern">
                   <div>
@@ -843,6 +901,42 @@ export function App() {
                   )}
                 </div>
               </div>
+            ) : (
+              <div className="logs-layout">
+                <div className="logs-toolbar">
+                  <div>
+                    <p className="pane-label">Live events</p>
+                    <h3>Workspace activity stream</h3>
+                  </div>
+                  <div className="header-tools">
+                    <button className="subtle-button" onClick={() => refreshState().catch(() => undefined)} type="button">
+                      Sync
+                    </button>
+                    <button className="subtle-button" onClick={() => setView("models")} type="button">
+                      Open Models
+                    </button>
+                  </div>
+                </div>
+                <div className="logs-feed">
+                  {recentLogs.length === 0 ? (
+                    <div className="empty-state large">
+                      <h3>Logs will appear here</h3>
+                      <p>Start the runtime, download a model, or send a prompt to populate the activity feed.</p>
+                    </div>
+                  ) : (
+                    recentLogs.map((entry) => (
+                      <article className="log-entry" key={entry.id}>
+                        <div className="log-entry-meta">
+                          <span className={`log-badge ${entry.level}`}>{entry.level}</span>
+                          <span className="log-scope">{entry.scope}</span>
+                          <span>{formatTime(entry.timestamp)}</span>
+                        </div>
+                        <p>{entry.message}</p>
+                      </article>
+                    ))
+                  )}
+                </div>
+              </div>
             )}
           </section>
 
@@ -886,7 +980,7 @@ export function App() {
                   </div>
                 </div>
               </>
-            ) : (
+            ) : view === "models" ? (
               <>
                 <div className="inspector-card accent">
                   <p className="pane-label">Selected</p>
@@ -921,6 +1015,45 @@ export function App() {
                     <div>
                       <span>3</span>
                       <strong>Choose Use, then switch to Chat</strong>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="inspector-card accent">
+                  <p className="pane-label">Latest event</p>
+                  <h3>{latestLog?.scope ?? "No activity yet"}</h3>
+                  <div className="info-list">
+                    <div>
+                      <span>Level</span>
+                      <strong>{latestLog?.level ?? "-"}</strong>
+                    </div>
+                    <div>
+                      <span>When</span>
+                      <strong>{latestLog ? formatTime(latestLog.timestamp) : "-"}</strong>
+                    </div>
+                    <div>
+                      <span>Status</span>
+                      <strong>{state.server_status}</strong>
+                    </div>
+                  </div>
+                </div>
+                <div className="inspector-card">
+                  <p className="pane-label">What is shown here</p>
+                  <h3>Transparency without pretending</h3>
+                  <div className="info-list">
+                    <div>
+                      <span>Runtime</span>
+                      <strong>Start, stop, readiness, request flow</strong>
+                    </div>
+                    <div>
+                      <span>Downloads</span>
+                      <strong>Queue, stream, success, failure</strong>
+                    </div>
+                    <div>
+                      <span>Model thinking</span>
+                      <strong>Not exposed; only operational steps</strong>
                     </div>
                   </div>
                 </div>

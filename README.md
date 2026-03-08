@@ -11,7 +11,7 @@ It combines:
 
 ## Version
 
-Current release: `0.1.1`
+Current release: `0.2.0`
 
 Repository: [FUXKVOB/Lmapp](https://github.com/FUXKVOB/Lmapp)
 
@@ -74,6 +74,13 @@ Tauri release artifacts are generated in:
 
 - `src-tauri/target/release`
 - `src-tauri/target/release/bundle`
+
+## Release Notes 0.2.0
+
+- Desktop workspace refresh with stronger glassmorphism and cleaner desktop-first UI polish
+- New Logs tab for runtime activity, downloads, chat request flow, and update checks
+- Better menu/tray navigation across chat, models, settings, and diagnostics
+- More complete desktop shell with refined frameless behavior and operational visibility
 
 ## Release Notes 0.1.1
 

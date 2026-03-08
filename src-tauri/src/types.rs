@@ -58,6 +58,15 @@ pub struct DownloadStatus {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct LogEntry {
+    pub id: String,
+    pub timestamp: u64,
+    pub level: String,
+    pub scope: String,
+    pub message: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ChatMessage {
     pub role: String,
     pub content: String,
@@ -114,6 +123,7 @@ pub struct AppStateDto {
     pub onboarding_completed: bool,
     pub runtime: RuntimeSettings,
     pub downloads: Vec<DownloadStatus>,
+    pub logs: Vec<LogEntry>,
     pub presets: Vec<ModelPreset>,
     pub is_server_running: bool,
     pub server_status: String,
