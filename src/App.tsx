@@ -557,7 +557,7 @@ export function App() {
           </div>
         </div>
 
-        <div className="desktop-shell">
+        <div className={`desktop-shell view-${view}`}>
           <aside className="icon-rail">
             <button className={`rail-icon ${view === "chat" ? "active" : ""}`} onClick={() => setView("chat")} type="button" title="Chat">
               <ChatGlyph />
@@ -588,10 +588,15 @@ export function App() {
                   </button>
                 </div>
                 <input className="search-input" value={chatFilter} onChange={(event) => setChatFilter(event.target.value)} placeholder="Search chats" />
-                <div className="hero-card">
-                  <p className="pane-label">Active Model</p>
-                  <h3>{activeModel?.title ?? "Model not selected"}</h3>
-                  <p>{activeModel ? activeModel.source : "Open Models and choose one from the built-in catalog."}</p>
+                <div className="sidebar-summary-panel">
+                  <div className="sidebar-summary-head">
+                    <p className="pane-label">Active Model</p>
+                    <span className={`state-badge ${activeModel?.downloaded ? "success" : "muted"}`}>
+                      {activeModel?.downloaded ? "Ready" : "Unset"}
+                    </span>
+                  </div>
+                  <strong>{activeModel?.title ?? "Model not selected"}</strong>
+                  <span>{activeModel ? activeModel.source : "Choose a local model from the library."}</span>
                   <button className="subtle-button" onClick={() => setView("models")} type="button">
                     Open Models
                   </button>
@@ -623,10 +628,15 @@ export function App() {
                   </button>
                 </div>
                 <input className="search-input" value={modelFilter} onChange={(event) => setModelFilter(event.target.value)} placeholder="Filter library" />
-                <div className="hero-card">
-                  <p className="pane-label">Downloads</p>
-                  <h3>{totalDownloading > 0 ? `${totalDownloading} active` : "Idle"}</h3>
-                  <p>{totalDownloading > 0 ? "Files are downloading in the background." : "Pick a model from the built-in Hugging Face catalog."}</p>
+                <div className="sidebar-summary-panel">
+                  <div className="sidebar-summary-head">
+                    <p className="pane-label">Downloads</p>
+                    <span className={`state-badge ${totalDownloading > 0 ? "" : "muted"}`}>
+                      {totalDownloading > 0 ? "Active" : "Idle"}
+                    </span>
+                  </div>
+                  <strong>{totalDownloading > 0 ? `${totalDownloading} active` : "No active transfers"}</strong>
+                  <span>{totalDownloading > 0 ? "Files are downloading in the background." : "Add a model from Hugging Face or presets."}</span>
                   <button className="subtle-button" onClick={() => setCatalogOpen(true)} type="button">
                     Add Model
                   </button>
@@ -652,10 +662,13 @@ export function App() {
                     Refresh
                   </button>
                 </div>
-                <div className="hero-card">
-                  <p className="pane-label">Operational feed</p>
-                  <h3>{state.logs.length > 0 ? `${state.logs.length} events recorded` : "No events yet"}</h3>
-                  <p>This tab shows runtime actions, downloads, chat requests, and update checks. It does not expose hidden model reasoning.</p>
+                <div className="sidebar-summary-panel">
+                  <div className="sidebar-summary-head">
+                    <p className="pane-label">Operational Feed</p>
+                    <span className="state-badge">{state.logs.length}</span>
+                  </div>
+                  <strong>{state.logs.length > 0 ? "Activity stream available" : "No events yet"}</strong>
+                  <span>Runtime, downloads, requests, and updater events appear here.</span>
                   <button className="subtle-button" onClick={() => setView("chat")} type="button">
                     Back to Chat
                   </button>
@@ -716,8 +729,8 @@ export function App() {
 
                 <div className="chat-scroll">
                   {(activeChat?.messages ?? []).length === 0 && !isGenerating ? (
-                    <div className="empty-state">
-                      <h3>Chat is ready</h3>
+                    <div className="empty-state empty-state-console">
+                      <h3>Session ready</h3>
                       <p>Select a model, start the runtime, and send the first message.</p>
                     </div>
                   ) : (
@@ -833,9 +846,9 @@ export function App() {
 
                 <div className="model-grid">
                   {filteredModels.length === 0 ? (
-                    <div className="empty-state large">
-                      <h3>Your library is empty</h3>
-                      <p>Open the catalog and add a model from the built-in Hugging Face list.</p>
+                    <div className="empty-state empty-state-console large">
+                      <h3>Library is empty</h3>
+                      <p>Add a model from the catalog or use a recommended preset.</p>
                       <button onClick={() => setCatalogOpen(true)} type="button">
                         Open Catalog
                       </button>
@@ -919,9 +932,9 @@ export function App() {
                 </div>
                 <div className="logs-feed">
                   {recentLogs.length === 0 ? (
-                    <div className="empty-state large">
-                      <h3>Logs will appear here</h3>
-                      <p>Start the runtime, download a model, or send a prompt to populate the activity feed.</p>
+                    <div className="empty-state empty-state-console large">
+                      <h3>No events captured yet</h3>
+                      <p>Start the runtime, download a model, or send a prompt to populate the feed.</p>
                     </div>
                   ) : (
                     recentLogs.map((entry) => (
@@ -943,13 +956,27 @@ export function App() {
           <aside className="right-pane">
             {view === "chat" ? (
               <>
-                <div className="inspector-card accent">
+                <div className="inspector-card accent inspector-card-runtime">
                   <p className="pane-label">Runtime</p>
                   <h3>{compactRuntimeName(runtime.runtime_kind)}</h3>
+                  <div className="inspector-metrics">
+                    <div className="inspector-metric">
+                      <span>Server</span>
+                      <strong>{state.is_server_running ? "Online" : "Offline"}</strong>
+                    </div>
+                    <div className="inspector-metric">
+                      <span>Chats</span>
+                      <strong>{state.chats.length}</strong>
+                    </div>
+                    <div className="inspector-metric">
+                      <span>Queue</span>
+                      <strong>{totalDownloading}</strong>
+                    </div>
+                  </div>
                   <div className="info-list">
                     <div>
                       <span>Endpoint</span>
-                      <strong>{runtime.server_base_url}</strong>
+                      <strong className="mono">{runtime.server_base_url}</strong>
                     </div>
                     <div>
                       <span>Server</span>
@@ -971,7 +998,7 @@ export function App() {
                     </div>
                     <div>
                       <span>Model</span>
-                      <strong>{activeModel?.filename ?? "None"}</strong>
+                      <strong className="mono">{activeModel?.filename ?? "None"}</strong>
                     </div>
                     <div>
                       <span>Updated</span>
@@ -985,25 +1012,35 @@ export function App() {
                 <div className="inspector-card accent">
                   <p className="pane-label">Selected</p>
                   <h3>{activeModel?.title ?? "No model selected"}</h3>
-                  <div className="info-list">
-                    <div>
+                  <div className="inspector-metrics">
+                    <div className="inspector-metric">
+                      <span>Status</span>
+                      <strong>{activeModel?.downloaded ? "Ready" : "Missing"}</strong>
+                    </div>
+                    <div className="inspector-metric">
                       <span>Runtime</span>
                       <strong>{activeModel ? compactRuntimeName(activeModel.runtime_hint) : "-"}</strong>
                     </div>
+                    <div className="inspector-metric">
+                      <span>Library</span>
+                      <strong>{state.models.length}</strong>
+                    </div>
+                  </div>
+                  <div className="info-list">
                     <div>
                       <span>Source</span>
-                      <strong>{activeModel?.source ?? "-"}</strong>
+                      <strong className="mono">{activeModel?.source ?? "-"}</strong>
                     </div>
                     <div>
                       <span>Path</span>
-                      <strong>{activeModel?.local_path ?? "-"}</strong>
+                      <strong className="mono">{activeModel?.local_path ?? "-"}</strong>
                     </div>
                   </div>
                 </div>
                 <div className="inspector-card">
                   <p className="pane-label">Quick flow</p>
                   <h3>Next steps</h3>
-                  <div className="info-list">
+                  <div className="info-list info-list-steps">
                     <div>
                       <span>1</span>
                       <strong>Add a model from the catalog</strong>
@@ -1024,6 +1061,20 @@ export function App() {
                 <div className="inspector-card accent">
                   <p className="pane-label">Latest event</p>
                   <h3>{latestLog?.scope ?? "No activity yet"}</h3>
+                  <div className="inspector-metrics">
+                    <div className="inspector-metric">
+                      <span>Errors</span>
+                      <strong>{logSummary.errors}</strong>
+                    </div>
+                    <div className="inspector-metric">
+                      <span>Runtime</span>
+                      <strong>{logSummary.runtime}</strong>
+                    </div>
+                    <div className="inspector-metric">
+                      <span>Downloads</span>
+                      <strong>{logSummary.downloads}</strong>
+                    </div>
+                  </div>
                   <div className="info-list">
                     <div>
                       <span>Level</span>
@@ -1158,9 +1209,14 @@ export function App() {
         </div>
       ) : null}
 
-      <div className="toast-stack" aria-live="polite" aria-atomic="true">
+      <div className="toast-stack" aria-atomic="true" aria-live="polite">
         {toasts.map((toast) => (
-          <div className={`toast ${toast.tone}`} key={toast.id}>
+          <div
+            aria-live="polite"
+            className={`toast ${toast.tone}`}
+            key={toast.id}
+            role="status"
+          >
             <span className="toast-dot" />
             <p>{toast.message}</p>
           </div>

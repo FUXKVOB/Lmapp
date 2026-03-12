@@ -103,11 +103,17 @@ export function CatalogModal({
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="catalog-modal" onClick={(event) => event.stopPropagation()}>
+      <div
+        aria-labelledby="catalog-modal-title"
+        aria-modal="true"
+        className="catalog-modal"
+        onClick={(event) => event.stopPropagation()}
+        role="dialog"
+      >
         <div className="settings-top">
           <div>
             <p className="pane-label">Hugging Face</p>
-            <h3>Model Search</h3>
+            <h3 id="catalog-modal-title">Model Search</h3>
           </div>
           <button className="mini-button" onClick={onClose} type="button">
             X

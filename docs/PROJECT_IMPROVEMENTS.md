@@ -5,6 +5,10 @@ This file tracks the next improvements for `LmApp` after the first cleanup pass.
 ## Done
 
 - Synced the Rust package version in `src-tauri/Cargo.toml` with the app release version `0.2.0`.
+- Added Tauri command manifest generation and explicit app command permissions.
+- Tightened Tauri CSP and enabled updater artifact generation.
+- Added a signed release workflow scaffold and updater release documentation.
+- Added a version sync check so release metadata and app package versions fail fast when they drift.
 
 ## Next Priority
 
