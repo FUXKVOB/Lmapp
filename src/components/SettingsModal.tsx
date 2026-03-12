@@ -40,7 +40,13 @@ export function SettingsModal({
 }: SettingsModalProps) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="settings-modal" onClick={(event) => event.stopPropagation()}>
+      <div
+        aria-labelledby="settings-modal-title"
+        aria-modal="true"
+        className="settings-modal"
+        onClick={(event) => event.stopPropagation()}
+        role="dialog"
+      >
         <aside className="settings-sidebar">
           <div>
             <p className="pane-label">Settings</p>
@@ -73,7 +79,7 @@ export function SettingsModal({
 
         <section className="settings-content">
           <div className="settings-top">
-            <h3>
+            <h3 id="settings-modal-title">
               {settingsSection === "general" && "General Settings"}
               {settingsSection === "runtime" && "Runtime Configuration"}
               {settingsSection === "downloads" && "Download Settings"}
