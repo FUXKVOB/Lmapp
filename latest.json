@@ -1,7 +1,7 @@
 {
   "version": "0.2.0",
   "notes": "Desktop workspace refresh, logs tab, refined shell, and stronger updater/security foundation.",
-  "pub_date": "2026-03-08",
+  "pub_date": "2026-03-09",
   "platforms": {
     "windows-x86_64": {
       "signature": "",
