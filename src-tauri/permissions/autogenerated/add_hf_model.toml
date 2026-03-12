@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-add-hf-model"
+description = "Enables the add_hf_model command without any pre-configured scope."
+commands.allow = ["add_hf_model"]
+
+[[permission]]
+identifier = "deny-add-hf-model"
+description = "Denies the add_hf_model command without any pre-configured scope."
+commands.deny = ["add_hf_model"]
